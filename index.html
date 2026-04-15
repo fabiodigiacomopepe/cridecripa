@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultra-Secret-O-Matic 3000</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body { font-family: 'Courier New', Courier, monospace; background: #0d0d0d; color: #00ff41; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { max-width: 800px; width: 100%; border: 1px solid #00ff41; padding: 20px; box-shadow: 0 0 15px #00ff41; }
+        h1 { text-align: center; text-transform: uppercase; letter-spacing: 5px; }
+        textarea { width: 100%; height: 150px; background: #1a1a1a; color: #00ff41; border: 1px solid #00ff41; margin: 10px 0; padding: 10px; box-sizing: border-box; }
+        input[type="password"], input[type="file"] { background: #1a1a1a; color: #00ff41; border: 1px solid #00ff41; padding: 10px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
+        .buttons { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        button { background: #00ff41; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        button:hover { background: #008f11; }
+        .hint { font-size: 0.8em; color: #888; margin-top: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Secret-O-Matic</h1>
+    
+    <label>1. Carica un'immagine (opzionale):</label>
+    <input type="file" id="fileInput" accept="image/*">
+
+    <label>2. Testo o Risultato (Base64):</label>
+    <textarea id="textInput" placeholder="Scrivi qui il messaggio o incolla il codice criptato..."></textarea>
+
+    <label>3. Password (fondamentale!):</label>
+    <input type="password" id="password" placeholder="Inserisci la chiave segreta">
+
+    <div class="buttons">
+        <button onclick="encrypt()">Cripta</button>
+        <button onclick="decrypt()">Decripta</button>
+        <button onclick="clearAll()" style="background: #ff4141;">Reset</button>
+    </div>
+
+    <div class="hint">
+        Nessun dato viene inviato ai server. Tutto accade nella tua RAM.<br>
+        Se carichi una foto, verrà convertita in testo Base64 prima di essere criptata.
+    </div>
+</div>
+
+<script>
+    // Funzione per leggere l'immagine e trasformarla in stringa
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            document.getElementById('textInput').value = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Funzione per Criptare
+    function encrypt() {
+        const text = document.getElementById('textInput').value;
+        const pass = document.getElementById('password').value;
+
+        if (!text || !pass) {
+            alert("Manca il testo o la password, genio!");
+            return;
+        }
+
+        const encrypted = CryptoJS.AES.encrypt(text, pass).toString();
+        document.getElementById('textInput').value = encrypted;
+        alert("Messaggio Criptato con successo!");
+    }
+
+    // Funzione per Decriptare
+    function decrypt() {
+        const encryptedText = document.getElementById('textInput').value;
+        const pass = document.getElementById('password').value;
+
+        if (!encryptedText || !pass) {
+            alert("Metti la password e il codice segreto!");
+            return;
+        }
+
+        try {
+            const bytes = CryptoJS.AES.decrypt(encryptedText, pass);
+            const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+
+            if (!decrypted) throw new Error();
+
+            document.getElementById('textInput').value = decrypted;
+
+            // Se è un'immagine (inizia con data:image), diamo un feedback
+            if (decrypted.startsWith('data:image')) {
+                alert("Foto decriptata! Il codice è nel box, puoi copiarlo o usarlo.");
+                // Opzionale: potresti aggiungere un tag <img> per visualizzarla
+            }
+        } catch (e) {
+            alert("Password sbagliata o dati corrotti. Riprova, sarai più fortunato.");
+        }
+    }
+
+    function clearAll() {
+        document.getElementById('textInput').value = '';
+        document.getElementById('password').value = '';
+        document.getElementById('fileInput').value = '';
+    }
+</script>
+
+</body>
+</html>
