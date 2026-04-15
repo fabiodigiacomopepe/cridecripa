@@ -3,106 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultra-Secret-O-Matic 3000</title>
+    <title>Short-Secret-O-Matic</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <style>
-        body { font-family: 'Courier New', Courier, monospace; background: #0d0d0d; color: #00ff41; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { max-width: 800px; width: 100%; border: 1px solid #00ff41; padding: 20px; box-shadow: 0 0 15px #00ff41; }
-        h1 { text-align: center; text-transform: uppercase; letter-spacing: 5px; }
-        textarea { width: 100%; height: 150px; background: #1a1a1a; color: #00ff41; border: 1px solid #00ff41; margin: 10px 0; padding: 10px; box-sizing: border-box; }
-        input[type="password"], input[type="file"] { background: #1a1a1a; color: #00ff41; border: 1px solid #00ff41; padding: 10px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
-        .buttons { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        button { background: #00ff41; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
-        button:hover { background: #008f11; }
-        .hint { font-size: 0.8em; color: #888; margin-top: 10px; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { max-width: 700px; width: 100%; background: #1e1e1e; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { color: #bb86fc; text-align: center; }
+        textarea { width: 100%; height: 120px; background: #2d2d2d; color: #fff; border: 1px solid #333; border-radius: 8px; padding: 10px; box-sizing: border-box; margin-bottom: 10px; resize: vertical; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; background: #2d2d2d; border: 1px solid #333; color: #fff; border-radius: 8px; box-sizing: border-box; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { padding: 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-enc { background: #03dac6; color: #000; }
+        .btn-dec { background: #bb86fc; color: #000; }
+        button:hover { opacity: 0.8; transform: translateY(-2px); }
+        .stats { font-size: 0.75em; color: #888; margin-top: 5px; text-align: right; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Secret-O-Matic</h1>
+    <h2>🔒 Criptatore Compatto</h2>
     
-    <label>1. Carica un'immagine (opzionale):</label>
+    <label>Carica Immagine:</label>
     <input type="file" id="fileInput" accept="image/*">
 
-    <label>2. Testo o Risultato (Base64):</label>
-    <textarea id="textInput" placeholder="Scrivi qui il messaggio o incolla il codice criptato..."></textarea>
+    <label>Testo / Output Criptato:</label>
+    <textarea id="textInput" placeholder="Inserisci qui il testo o l'output compresso..."></textarea>
+    <div id="charCount" class="stats">Caratteri: 0</div>
 
-    <label>3. Password (fondamentale!):</label>
-    <input type="password" id="password" placeholder="Inserisci la chiave segreta">
+    <input type="password" id="password" placeholder="Password segreta">
 
-    <div class="buttons">
-        <button onclick="encrypt()">Cripta</button>
-        <button onclick="decrypt()">Decripta</button>
-        <button onclick="clearAll()" style="background: #ff4141;">Reset</button>
-    </div>
-
-    <div class="hint">
-        Nessun dato viene inviato ai server. Tutto accade nella tua RAM.<br>
-        Se carichi una foto, verrà convertita in testo Base64 prima di essere criptata.
+    <div class="grid">
+        <button class="btn-enc" onclick="process(true)">Comprimi & Cripta</button>
+        <button class="btn-dec" onclick="process(false)">Decripta & Espandi</button>
     </div>
 </div>
 
 <script>
-    // Funzione per leggere l'immagine e trasformarla in stringa
+    const input = document.getElementById('textInput');
+    const charCount = document.getElementById('charCount');
+
+    // Aggiorna il counter caratteri
+    input.addEventListener('input', () => {
+        charCount.innerText = `Caratteri: ${input.value.length}`;
+    });
+
+    // Leggi immagine
     document.getElementById('fileInput').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
-        reader.onload = function(event) {
-            document.getElementById('textInput').value = event.target.result;
+        reader.onload = (ev) => {
+            input.value = ev.target.result;
+            charCount.innerText = `Caratteri (Base64 foto): ${input.value.length}`;
         };
         reader.readAsDataURL(file);
     });
 
-    // Funzione per Criptare
-    function encrypt() {
-        const text = document.getElementById('textInput').value;
+    function process(isEncrypting) {
+        const data = input.value;
         const pass = document.getElementById('password').value;
 
-        if (!text || !pass) {
-            alert("Manca il testo o la password, genio!");
-            return;
-        }
-
-        const encrypted = CryptoJS.AES.encrypt(text, pass).toString();
-        document.getElementById('textInput').value = encrypted;
-        alert("Messaggio Criptato con successo!");
-    }
-
-    // Funzione per Decriptare
-    function decrypt() {
-        const encryptedText = document.getElementById('textInput').value;
-        const pass = document.getElementById('password').value;
-
-        if (!encryptedText || !pass) {
-            alert("Metti la password e il codice segreto!");
-            return;
-        }
+        if (!data || !pass) return alert("Inserisci sia i dati che la password!");
 
         try {
-            const bytes = CryptoJS.AES.decrypt(encryptedText, pass);
-            const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-
-            if (!decrypted) throw new Error();
-
-            document.getElementById('textInput').value = decrypted;
-
-            // Se è un'immagine (inizia con data:image), diamo un feedback
-            if (decrypted.startsWith('data:image')) {
-                alert("Foto decriptata! Il codice è nel box, puoi copiarlo o usarlo.");
-                // Opzionale: potresti aggiungere un tag <img> per visualizzarla
+            if (isEncrypting) {
+                // 1. Cripta con AES
+                const encrypted = CryptoJS.AES.encrypt(data, pass).toString();
+                // 2. Comprime il risultato criptato usando UTF-16 (molto più corto del Base64)
+                const compressed = LZString.compressToUTF16(encrypted);
+                input.value = compressed;
+                alert("Criptato e Compresso!");
+            } else {
+                // 1. Decomprime
+                const decompressed = LZString.decompressFromUTF16(data);
+                if (!decompressed) throw new Error("Compressione non valida");
+                // 2. Decripta
+                const bytes = CryptoJS.AES.decrypt(decompressed, pass);
+                const original = bytes.toString(CryptoJS.enc.Utf8);
+                if (!original) throw new Error("Password errata");
+                
+                input.value = original;
             }
+            charCount.innerText = `Caratteri: ${input.value.length}`;
         } catch (e) {
-            alert("Password sbagliata o dati corrotti. Riprova, sarai più fortunato.");
+            alert("Errore: dati corrotti o password sbagliata.");
         }
-    }
-
-    function clearAll() {
-        document.getElementById('textInput').value = '';
-        document.getElementById('password').value = '';
-        document.getElementById('fileInput').value = '';
     }
 </script>
 
